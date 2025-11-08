@@ -1,0 +1,49 @@
+name: Slack Reporter Example
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  notify-slack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send success notification
+        if: success()
+        uses: ./
+        with:
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-name: 'general'
+          message: |
+            ✅ **GitHub Action completed successfully!**
+
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** `${{ github.sha }}`
+            **Author:** ${{ github.actor }}
+            **Workflow:** ${{ github.workflow }}
+          add-reaction: 'true'
+          reaction-emoji: 'white_check_mark'
+
+      - name: Send failure notification
+        if: failure()
+        uses: ./
+        with:
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-name: 'alerts'
+          message: |
+            ❌ **GitHub Action failed!**
+
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** `${{ github.sha }}`
+            **Author:** ${{ github.actor }}
+            **Workflow:** ${{ github.workflow }}
+            **Run ID:** ${{ github.run_id }}
+          add-reaction: 'true'
+          reaction-emoji: 'x'
