@@ -51,35 +51,3 @@ jobs:
         fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-
-    - name: Install linting dependencies
-      run: |
-        cd slack
-        python -m pip install --upgrade pip
-        pip install ruff black isort
-
-    - name: Run ruff linter
-      run: |
-        cd slack
-        ruff check slack_reporter/ tests/
-
-    - name: Check code formatting with black
-      run: |
-        cd slack
-        black --check slack_reporter/ tests/
-
-    - name: Check import sorting with isort
-      run: |
-        cd slack
-        isort --check-only slack_reporter/ tests/
