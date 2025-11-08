@@ -32,18 +32,20 @@ jobs:
 
     - name: Install dependencies
       run: |
+        cd slack
         python -m pip install --upgrade pip
         pip install -e ".[test]"
 
     - name: Run tests with pytest
       run: |
+        cd slack
         pytest tests/ -v --cov=slack_reporter --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
       if: matrix.python-version == '3.11'
       with:
-        file: ./coverage.xml
+        file: ./slack/coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
@@ -63,17 +65,21 @@ jobs:
 
     - name: Install linting dependencies
       run: |
+        cd slack
         python -m pip install --upgrade pip
         pip install ruff black isort
 
     - name: Run ruff linter
       run: |
+        cd slack
         ruff check slack_reporter/ tests/
 
     - name: Check code formatting with black
       run: |
+        cd slack
         black --check slack_reporter/ tests/
 
     - name: Check import sorting with isort
       run: |
+        cd slack
         isort --check-only slack_reporter/ tests/
