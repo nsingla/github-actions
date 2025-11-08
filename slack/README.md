@@ -156,6 +156,55 @@ client = SlackClient()
 response = client.send_message(text="Hello from Python! 🐍")
 ```
 
+## Development
+
+### Running Tests
+
+This project includes comprehensive unit tests. To run them:
+
+1. **Install test dependencies:**
+   ```bash
+   pip install -e ".[test]"
+   ```
+
+2. **Run tests:**
+   ```bash
+   # Run all tests
+   pytest
+
+   # Run with coverage
+   pytest --cov=slack_reporter --cov-report=term-missing
+
+   # Run specific test file
+   pytest tests/test_slack_client.py
+
+   # Run with verbose output
+   pytest -v
+   ```
+
+3. **Test Configuration:**
+   - Tests are configured in `pyproject.toml`
+   - Coverage reports exclude test files and virtual environments
+   - Tests use `pytest-mock` for mocking Slack API calls
+
+### Code Quality
+
+The project includes GitHub Actions for automated testing and linting:
+
+- **Tests:** Run on Python 3.11 and 3.12 on every push and PR
+- **Linting:** Uses `ruff`, `black`, and `isort` for code quality
+- **Coverage:** Uploaded to Codecov for tracking test coverage
+
+### Building and Publishing
+
+The package is automatically built and published to PyPI when a new release is created:
+
+1. Create a new release on GitHub with a version tag (e.g., `v1.0.0`)
+2. The publish workflow will:
+   - Build the package using `hatchling`
+   - Test the built package on multiple Python versions
+   - Publish to PyPI using trusted publishing
+
 ## Required Slack Permissions
 
 Your Slack bot needs these OAuth scopes:
