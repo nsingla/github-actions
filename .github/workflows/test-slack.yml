@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run Slack Tests
 
 on:
   push:
@@ -37,9 +37,11 @@ jobs:
         pip install -e ".[test]"
 
     - name: Run tests with pytest
+      id: test
       run: |
         cd slack
         pytest tests/ -v --cov=slack_reporter --cov-report=xml --cov-report=term-missing
+      continue-on-error: true
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
@@ -51,3 +53,8 @@ jobs:
         fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Fail workflow on test failure
+      if: (steps.test.outcome == 'failure') && !cancelled()
+      shell: bash
+      run: exit 1

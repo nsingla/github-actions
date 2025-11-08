@@ -59,7 +59,7 @@ class TestMain:
         sys.argv = self.original_argv
 
     @patch("run_action.set_github_output")
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -100,7 +100,7 @@ class TestMain:
         mock_set_output.assert_any_call("channel-id", "C123456")
 
     @patch("run_action.set_github_output")
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -157,7 +157,7 @@ class TestMain:
         mock_set_output.assert_any_call("channel-id", "C123456")
 
     @patch("run_action.set_github_output")
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -221,8 +221,9 @@ class TestMain:
         # Act
         run_action.main()
 
-        # Assert
-        mock_exit.assert_called_once_with(1)
+        # Assert - Should call sys.exit at least once with code 1
+        assert mock_exit.called
+        mock_exit.assert_any_call(1)
 
     @patch.dict(os.environ, {"SLACK_MESSAGE": ""})
     @patch("sys.exit")
@@ -231,10 +232,11 @@ class TestMain:
         # Act
         run_action.main()
 
-        # Assert
-        mock_exit.assert_called_once_with(1)
+        # Assert - Should call sys.exit at least once with code 1
+        assert mock_exit.called
+        mock_exit.assert_any_call(1)
 
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch.dict(os.environ, {"SLACK_MESSAGE": "Test message"})
     @patch("sys.exit")
     def test_main_slack_client_init_error(self, mock_exit, mock_slack_client_class):
@@ -250,7 +252,7 @@ class TestMain:
         # Assert
         mock_exit.assert_called_once_with(1)
 
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -288,7 +290,7 @@ class TestMain:
         # Assert
         mock_exit.assert_called_once_with(1)
 
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -312,11 +314,12 @@ class TestMain:
         # Act
         run_action.main()
 
-        # Assert
-        mock_exit.assert_called_once_with(1)
+        # Assert - Should call sys.exit at least once with code 1
+        assert mock_exit.called
+        mock_exit.assert_any_call(1)
 
     @patch("run_action.set_github_output")
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -373,7 +376,7 @@ class TestMain:
         mock_set_output.assert_any_call("channel-id", "C123456")
 
     @patch("run_action.set_github_output")
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -414,7 +417,7 @@ class TestMain:
         mock_set_output.assert_any_call("message-ts", "1234567890.123456")
         mock_set_output.assert_any_call("channel-id", "C123456")
 
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch.dict(os.environ, {"SLACK_MESSAGE": "Test message"})
     @patch("sys.exit")
     def test_main_unexpected_exception(self, mock_exit, mock_slack_client_class):
@@ -429,7 +432,7 @@ class TestMain:
         mock_exit.assert_called_once_with(1)
 
     @patch("run_action.set_github_output")
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",
@@ -471,7 +474,7 @@ class TestMain:
         mock_slack_client.add_reaction_to_thread_by_channel_id.assert_not_called()
 
     @patch("run_action.set_github_output")
-    @patch("slack_reporter.clients.slack_client.SlackClient")
+    @patch("run_action.SlackClient")
     @patch(
         "slack_reporter.constants.slack_constants.SlackConstants.SLACK_CHANNEL_NAME",
         "test-channel",

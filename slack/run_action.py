@@ -56,8 +56,12 @@ def main():
         logger.info(f"Sending message to channel: {SlackConstants.SLACK_CHANNEL_NAME}")
         response = slack_client.send_message(text=message)
 
-        if not response or not response.get('ok'):
-            error_msg = response.get('error', 'Unknown error') if response else 'No response'
+        if not response:
+            logger.error("Failed to send message: No response")
+            sys.exit(1)
+
+        if not response.get('ok'):
+            error_msg = response.get('error', 'Unknown error')
             logger.error(f"Failed to send message: {error_msg}")
             sys.exit(1)
 
