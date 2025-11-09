@@ -23,7 +23,7 @@ class SlackClient:
             )
         self.client = WebClient(token=SlackConstants.TOKEN, timeout=30)
 
-    def get_channel_id_by_name(self, channel_name: str) -> str:
+    def get_channel_id_by_name(self, channel_name: str) -> str | None:
         """
         Send GET request to get the channel ID by it's name
         :param channel_name - name of the slack channel for which you want to get id for
@@ -43,7 +43,8 @@ class SlackClient:
 
                     # Check if response has expected structure
                     if not conversations or "channels" not in conversations:
-                        raise RuntimeError("Invalid response structure from Slack API")
+                        self.logger.error("Invalid response structure from Slack API")
+                        return None
 
                     for channel in conversations["channels"]:
                         if channel["name"] == channel_name:
@@ -58,20 +59,23 @@ class SlackClient:
                     next_cursor = response_metadata.get("next_cursor", "")
 
                     if not next_cursor:
-                        raise RuntimeError(
+                        self.logger.warning(
                             f"The channel {channel_name} was not found in the conversation list. Cannot get it's ID"
                         )
+                        return None
                     else:
                         self.logger.debug(
                             f"The Slack channel was not found on page {iteration_count}; trying the next page using cursor: {next_cursor}"
                         )
 
                 if iteration_count >= max_iterations:
-                    raise RuntimeError(
+                    self.logger.error(
                         f"Reached maximum iterations ({max_iterations}) while searching for channel {channel_name}"
                     )
+                    return None
             else:
-                raise ValueError("Please provide a slack channel name")
+                self.logger.error("Please provide a slack channel name")
+                return None
         except SlackApiError as e:
             self.logger.error("Error fetching conversations: {}".format(e))
             return None
