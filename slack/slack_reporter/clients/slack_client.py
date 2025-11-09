@@ -67,7 +67,9 @@ class SlackClient:
                         )
 
                 if iteration_count >= max_iterations:
-                    raise RuntimeError(f"Reached maximum iterations ({max_iterations}) while searching for channel {channel_name}")
+                    raise RuntimeError(
+                        f"Reached maximum iterations ({max_iterations}) while searching for channel {channel_name}"
+                    )
             else:
                 raise ValueError("Please provide a slack channel name")
         except SlackApiError as e:
