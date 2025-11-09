@@ -11,26 +11,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-
-    - name: Install build dependencies
-      run: |
-        cd slack
-        python -m pip install --upgrade pip
-        pip install build twine
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
 
     - name: Build package
       run: |
         cd slack
-        python -m build
-
-    - name: Check package
-      run: |
-        cd slack
-        twine check dist/*
+        uv build
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -48,8 +35,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -61,12 +48,12 @@ jobs:
 
     - name: Install package from wheel
       run: |
-        pip install slack/dist/*.whl
+        uv pip install slack/dist/*.whl
 
     - name: Test installed package
       run: |
         cd slack
-        python -c "import slack_reporter; print('Package imported successfully')"
+        uv run python -c "import slack_reporter; print('Package imported successfully')"
 
   publish:
     runs-on: ubuntu-latest

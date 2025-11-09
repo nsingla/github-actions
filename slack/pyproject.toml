@@ -10,6 +10,9 @@ dependencies = [
     "slack-sdk==3.37.0",
 ]
 
+[project.scripts]
+run_action = "run_action:main"
+
 [project.optional-dependencies]
 dev = [
     "setuptools==80.9.0",
