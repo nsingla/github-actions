@@ -21,21 +21,30 @@ class SlackClient:
             raise ValueError(
                 "The SLACK_BOT_TOKEN environment variable was not set. Cannot interact with Slack"
             )
-        self.client = WebClient(token=SlackConstants.TOKEN)
+        self.client = WebClient(token=SlackConstants.TOKEN, timeout=30)
 
-    def get_channel_id_by_name(self, channel_name: str) -> str | None:
+    def get_channel_id_by_name(self, channel_name: str) -> str:
         """
         Send GET request to get the channel ID by it's name
         :param channel_name - name of the slack channel for which you want to get id for
         """
         self.logger.info(f"Getting channel id by it's name {channel_name}...")
         next_cursor = None
+        max_iterations = 50  # Safety limit to prevent infinite loops
+        iteration_count = 0
+
         try:
             if channel_name:
-                while True:
+                while iteration_count < max_iterations:
+                    iteration_count += 1
                     conversations = self.client.conversations_list(
                         limit=100, cursor=next_cursor
                     )
+
+                    # Check if response has expected structure
+                    if not conversations or "channels" not in conversations:
+                        raise RuntimeError("Invalid response structure from Slack API")
+
                     for channel in conversations["channels"]:
                         if channel["name"] == channel_name:
                             channel_id = channel["id"]
@@ -43,24 +52,31 @@ class SlackClient:
                                 f"Slack channel {channel_name} has ID {channel_id}"
                             )
                             return channel_id
-                    if next_cursor := conversations["response_metadata"]["next_cursor"]:
-                        self.logger.debug(
-                            f"The Slack channel was not found on the fetched page; trying the next page using the cursor: "
-                            f"{next_cursor}"
-                        )
-                    else:
-                        self.logger.warning(
+
+                    # Handle pagination
+                    response_metadata = conversations.get("response_metadata", {})
+                    next_cursor = response_metadata.get("next_cursor", "")
+
+                    if not next_cursor:
+                        raise RuntimeError(
                             f"The channel {channel_name} was not found in the conversation list. Cannot get it's ID"
                         )
+                    else:
+                        self.logger.debug(
+                            f"The Slack channel was not found on page {iteration_count}; trying the next page using cursor: {next_cursor}"
+                        )
+
+                if iteration_count >= max_iterations:
+                    raise RuntimeError(f"Reached maximum iterations ({max_iterations}) while searching for channel {channel_name}")
             else:
-                self.logger.error("Please provide a slack channel name")
+                raise ValueError("Please provide a slack channel name")
         except SlackApiError as e:
             self.logger.error("Error fetching conversations: {}".format(e))
             return None
 
     def send_message_in_thread_by_channel_id(
         self, channel_id: str, text: str, thread_ts: str = None
-    ) -> SlackResponse:
+    ) -> SlackResponse | None:
         """Send the given text to the given slack channel, thread.
         :param channel_id - id of the slack channel where you want to post your message)
         :param text - body of your message
@@ -80,14 +96,14 @@ class SlackClient:
             )
         except SlackApiError as e:
             self.logger.error(f"Failed to send the Slack message: {e}")
+            return None
 
     def add_reaction_to_thread_by_channel_id(
         self, channel_id: str, emoji_name: str = "approved", thread_ts: str = None
-    ) -> SlackResponse:
-        """Send the given text to the given slack channel, thread.
-        :param channel_id - id of the slack channel where you want to post your message)
-        :param emoji_name - name of the emoji you want to reach with
-        :param successful_run - Add an emoji of failed or pass to a slack message
+    ) -> SlackResponse | None:
+        """Add a reaction to a message in the given slack channel, thread.
+        :param channel_id - id of the slack channel where you want to add the reaction
+        :param emoji_name - name of the emoji you want to react with
         :param thread_ts - timestamp of the parent message (Optional - if None, then the message is posted as a parent message)
         """
         self.logger.info(
@@ -99,6 +115,7 @@ class SlackClient:
             )
         except SlackApiError as e:
             self.logger.error(f"Failed to add reaction to the Slack message: {e}")
+            return None
 
     def send_message(
         self,
@@ -108,9 +125,8 @@ class SlackClient:
     ) -> SlackResponse:
         """
         Send the given text to the given slack channel as a parent message or in a thread
-        :param channel_name - name of the slack channel where you want to post your message (Defalts to {SlackConstants.SLACK_CHANNEL_NAME})
+        :param channel_name - name of the slack channel where you want to post your message (Defaults to {SlackConstants.SLACK_CHANNEL_NAME})
         :param text - body of your message (Defaults to None)
-        :param successful_run - If true adds a right tick as a reaction to the slack message
         :param thread_ts - timestamp of the parent message (Optional - if None, then the message is posted as a parent message)
         """
         self.channel_id: str = self.get_channel_id_by_name(channel_name=channel_name)

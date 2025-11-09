@@ -32,7 +32,7 @@ class TestSlackClient:
 
         # Assert
         assert client.client == mock_client_instance
-        mock_webclient.assert_called_once_with(token="xoxb-test-token")
+        mock_webclient.assert_called_once_with(token="xoxb-test-token", timeout=30)
 
     @patch("slack_reporter.clients.slack_client.SlackConstants.TOKEN", None)
     def test_init_no_token_raises_error(self):
@@ -487,8 +487,21 @@ class TestSlackClient:
         client = SlackClient()
 
         # Act
-        response = client.send_message(text="Default test message")
+        response = client.send_message(
+            channel_name="default-channel", text="Default test message"
+        )
 
         # Assert
         assert response == mock_response
         assert client.channel_id == "C111111"
+        mock_client_instance.conversations_list.assert_called_once_with(
+            limit=100, cursor=None
+        )
+        mock_client_instance.chat_postMessage.assert_called_once_with(
+            channel="C111111",
+            mrkdwn=True,
+            text="Default test message",
+            thread_ts=None,
+            unfurl_links=False,
+            unfurl_media=False,
+        )
