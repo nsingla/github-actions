@@ -1,0 +1,1 @@
+"""GitHub Artifacts Reader package."""

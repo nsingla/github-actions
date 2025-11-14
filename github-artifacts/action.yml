@@ -1,0 +1,62 @@
+name: 'GitHub Artifacts Reader'
+description: 'Read and check GitHub workflow run artifacts with options to verify existence or list artifacts'
+author: 'nsingla'
+
+inputs:
+  github-token:
+    description: 'GitHub token with actions:read permission'
+    required: true
+  repository:
+    description: 'Repository in format "owner/repo" (defaults to current repository)'
+    required: false
+    default: ''
+  run-id:
+    description: 'Workflow run ID (defaults to current run)'
+    required: false
+    default: ''
+  operation:
+    description: 'Operation to perform: "check" (check if artifact exists) or "list" (list artifacts)'
+    required: true
+    default: 'list'
+  artifact-name:
+    description: 'Name of artifact to check for existence (required when operation=check, optional filter when operation=list)'
+    required: false
+    default: ''
+  per-page:
+    description: 'Number of results per page (max 100)'
+    required: false
+    default: '30'
+  page:
+    description: 'Page number for pagination'
+    required: false
+    default: '1'
+
+outputs:
+  artifact-exists:
+    description: 'Boolean indicating if the artifact exists (only for operation=check)'
+  artifacts:
+    description: 'JSON list of artifacts (only for operation=list)'
+  total-count:
+    description: 'Total number of artifacts found'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+
+    - name: Run GitHub Artifacts Reader
+      shell: bash
+      run: uv run run_action
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        REPOSITORY: ${{ inputs.repository }}
+        RUN_ID: ${{ inputs.run-id }}
+        OPERATION: ${{ inputs.operation }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        PER_PAGE: ${{ inputs.per-page }}
+        PAGE: ${{ inputs.page }}
+
+branding:
+  icon: 'archive'
+  color: 'purple'
