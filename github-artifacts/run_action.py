@@ -18,26 +18,28 @@ from github_artifacts_reader.clients.github_client import GitHubArtifactsClient
 from github_artifacts_reader.constants.github_constants import GitHubConstants
 
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 def set_github_output(name: str, value: str):
     """Set GitHub Action output."""
     github_output = os.environ.get('GITHUB_OUTPUT')
     if github_output:
         with open(github_output, 'a') as f:
             f.write(f"{name}={value}\n")
+            logger.info(f"Setting GitHub output: {name}={value}")
     else:
         # Fallback for older runners
         print(f"::set-output name={name}::{value}")
+        logger.info(f"Set GitHub output (fallback): {name}={value}")
 
 
 def main():
     """Main entrypoint for the GitHub Action."""
-
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(levelname)s: %(message)s'
-    )
-    logger = logging.getLogger(__name__)
 
     try:
         # Initialize constants
@@ -53,7 +55,7 @@ def main():
 
         # Validate inputs
         if not repository:
-            logger.error("Repository is required but not provided")
+            logger.error(f"Repository is required but not provided. REPOSITORY env: '{os.getenv('REPOSITORY', 'NOT_SET')}', GITHUB_REPOSITORY env: '{os.getenv('GITHUB_REPOSITORY', 'NOT_SET')}'")
             sys.exit(1)
 
         if operation not in ['check', 'list']:
@@ -78,13 +80,24 @@ def main():
         if operation == 'check':
             # Check if artifact exists
             logger.info(f"Checking if artifact '{artifact_name}' exists...")
-            artifact_exists = github_client.check_artifact_exists(
+            artifact_exists = False
+            artifact_list = github_client.list_workflow_run_artifacts(
                 repository=repository,
-                artifact_name=artifact_name,
-                run_id=run_id if run_id else None
+                run_id=run_id if run_id else None,
+                per_page=1000
             )
+            total_artifacts = artifact_list['total_count']
+            logger.info(f"Found a total of {total_artifacts} artifacts")
+            logger.info(f"Arifacts: {artifact_list['artifacts']}")
+            if total_artifacts > 0:
+                for artifact in artifact_list['artifacts']:
+                    if artifact['name'].lower() == artifact_name.lower():
+                        artifact_exists = True
+            else:
+                artifact_exists = False
 
-            logger.info(f"✅ Artifact existence check completed, artifacts exists={artifact_exists}")
+
+            logger.info(f"✅ Artifact existence check completed, artifacts exists={str(artifact_exists).lower()}")
 
             # Set output
             set_github_output('artifact-exists', str(artifact_exists).lower())
@@ -120,7 +133,7 @@ def main():
 
             # Set outputs
             set_github_output('artifacts', json.dumps(summary['artifacts']))
-            set_github_output('count', str(total_count))
+            set_github_output('total-count', str(total_count))
 
         logger.info("🎉 GitHub Artifacts Reader action completed successfully!")
 

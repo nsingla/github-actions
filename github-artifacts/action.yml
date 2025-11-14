@@ -17,7 +17,7 @@ inputs:
   operation:
     description: 'Operation to perform: "check" (check if artifact exists) or "list" (list artifacts)'
     required: true
-    default: 'list'
+    default: 'check'
   artifact-name:
     description: 'Name of artifact to check for existence (required when operation=check, optional filter when operation=list)'
     required: false
@@ -34,24 +34,36 @@ inputs:
 outputs:
   artifact-exists:
     description: 'Boolean indicating if the artifact exists (only for operation=check)'
+    value: ${{ steps.run_action.outputs.artifact-exists }}
   artifacts:
     description: 'JSON list of artifacts (only for operation=list)'
-  total-count:
+    value: ${{ steps.run_action.outputs.artifacts }}
+  count:
     description: 'Total number of artifacts found'
+    value: ${{ steps.run_action.outputs.count }}
 
 runs:
   using: 'composite'
   steps:
     - name: Install uv
       uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: uv sync
 
     - name: Run GitHub Artifacts Reader
       shell: bash
+      id: run_action
+      working-directory: ${{ github.action_path }}
       run: uv run run_action
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        REPOSITORY: ${{ inputs.repository }}
-        RUN_ID: ${{ inputs.run-id }}
+        REPOSITORY: ${{ inputs.repository || github.repository }}
+        RUN_ID: ${{ inputs.run-id || github.run_id }}
         OPERATION: ${{ inputs.operation }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
         PER_PAGE: ${{ inputs.per-page }}
